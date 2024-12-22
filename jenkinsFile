@@ -24,17 +24,16 @@ pipeline {
         stage('Build and Test with Maven') {
             steps {
                 // Exécuter les tests avec le profil de test
-                sh 'mvn clean verify -Dspring.profiles.active=test'
+                sh 'export SPRING_PROFILES_ACTIVE=test
+                                            mvn clean verify'
             }
         }
 
         stage('SonarQube Analysis') {
-            environment {
-                SONAR_HOST_URL = 'http://localhost:9000'
-                SONAR_AUTH_TOKEN = 'sonarqube-token'
-            }
             steps {
-                sh 'mvn sonar:sonar'
+                withSonarQubeEnv('Sonarqube') {
+                                    sh 'mvn sonar:sonar'
+                }
             }
         }
 
