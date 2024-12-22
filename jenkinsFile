@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        SONARQUBE_SERVER = 'Sonarqube'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/imane-bouabidi/citronix_deploy.git', branch: 'main'
+            }
+        }
+
+        stage('Build and Test with Maven') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            environment {
+                    SONAR_HOST_URL = 'http://localhost:9000'
+                    SONAR_AUTH_TOKEN = 'sonarqube-token'
+                }
+                steps {
+                    sh 'mvn sonar:sonar'
+                }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t imaneyoucode/citronix:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh 'docker push imaneyoucode/citronix:${BUILD_NUMBER}'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
