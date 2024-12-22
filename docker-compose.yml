@@ -1,0 +1,22 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13
+    container_name: citronix-db
+    environment:
+      POSTGRES_DB: citronix_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Imane2002***
+    ports:
+      - "5432:5432"
+    volumes:
+      - citronix-db-data:/var/lib/postgresql/data
+    networks:
+      - citronix-network
+
+networks:
+  citronix-network:
+    driver: bridge
+
+volumes:
+  citronix-db-data:
