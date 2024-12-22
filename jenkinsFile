@@ -16,14 +16,12 @@ pipeline {
         stage('Start PostgreSQL') {
             steps {
                 sh 'docker-compose up -d postgres'
-                // Attendre que PostgreSQL soit prêt
                 sh 'sleep 15'
             }
         }
 
         stage('Build and Test with Maven') {
             steps {
-                // Exécuter les tests avec le profil de test
                 sh 'export SPRING_PROFILES_ACTIVE=test
                                             mvn clean verify'
             }
@@ -31,14 +29,14 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('Sonarqube') {
-                            sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=citronix \
-                                -Dsonar.host.url=http://localhost:9000 \
-                                -Dsonar.login=${SONARQUBE_SERVER}
-                            '''
-                        }
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=citronix \
+                            -Dsonar.host.url=http://localhost:9000 \
+                            -Dsonar.login=$SONAR_TOKEN
+                    '''
+                }
             }
         }
 
@@ -65,7 +63,6 @@ pipeline {
 
     post {
         always {
-            // Nettoyage
             sh 'docker-compose down'
             cleanWs()
         }
