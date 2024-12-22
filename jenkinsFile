@@ -13,24 +13,28 @@ pipeline {
             }
         }
 
+        stage('Start PostgreSQL') {
+            steps {
+                sh 'docker-compose up -d postgres'
+                // Attendre que PostgreSQL soit prêt
+                sh 'sleep 15'
+            }
+        }
+
         stage('Build and Test with Maven') {
             steps {
-                sh 'mvn clean install'
+                // Exécuter les tests avec le profil de test
+                sh 'mvn clean verify -Dspring.profiles.active=test'
             }
         }
 
         stage('SonarQube Analysis') {
             environment {
-                    SONAR_HOST_URL = 'http://localhost:9000'
-                    SONAR_AUTH_TOKEN = 'sonarqube-token'
-                }
-                steps {
-                    sh 'mvn sonar:sonar'
-                }
-        }
-        stage('Start PostgreSQL with Docker Compose') {
+                SONAR_HOST_URL = 'http://localhost:9000'
+                SONAR_AUTH_TOKEN = 'sonarqube-token'
+            }
             steps {
-                sh 'docker-compose -f docker-compose.yml up -d'
+                sh 'mvn sonar:sonar'
             }
         }
 
@@ -47,10 +51,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker-compose up -d app'
+            }
+        }
     }
 
     post {
         always {
+            // Nettoyage
+            sh 'docker-compose down'
             cleanWs()
         }
     }
